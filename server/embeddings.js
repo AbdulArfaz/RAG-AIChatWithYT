@@ -1,31 +1,40 @@
 import { HuggingFaceTransformersEmbeddings } from "@langchain/community/embeddings/huggingface_transformers";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { Document } from "@langchain/core/documents";
-import { PGVectorStore } from '@langchain/pgvector';
+import { PGVectorStore } from "@langchain/pgvector";
+import pg from "pg";
 
-// Use a free, local embedding model that doesn't use Gemini API quotas
+// 1. Initialize HuggingFace local embeddings
 const embeddings = new HuggingFaceTransformersEmbeddings({
   model: "Xenova/all-MiniLM-L6-v2",
+});
+
+const pgPool = new pg.Pool({
+  connectionString: process.env.DB_URL,
+});
+
+pgPool.on("error", (err) => {
+  console.error("PostgreSQL Pool error (caught safely):", err.message);
 });
 
 export const vectorStore = await PGVectorStore.initialize(embeddings, {
   postgresConnectionOptions: {
     connectionString: process.env.DB_URL,
   },
-  tableName: 'transcripts',
+  tableName: "transcripts",
   columns: {
-    idColumnName: 'id',
-    vectorColumnName: 'vector',
-    contentColumnName: 'content',
-    metadataColumnName: 'metadata',
+    idColumnName: "id",
+    vectorColumnName: "vector",
+    contentColumnName: "content",
+    metadataColumnName: "metadata",
   },
-  distanceStrategy: 'cosine',
+  distanceStrategy: "cosine",
 });
 
 export const addYTVideoToVectorStore = async (videoData) => {
-  const { transcript, video_id } = videoData;
+  const transcript = videoData.transcript || videoData.text;
+  const video_id = videoData.video_id;
 
-  // Safety check to ensure transcript is valid text
   if (!transcript || transcript.trim().length === 0) {
     console.error("Transcript is empty or failed to load!");
     return;
@@ -34,8 +43,8 @@ export const addYTVideoToVectorStore = async (videoData) => {
   const docs = [
     new Document({
       pageContent: transcript,
-      metadata: { video_id }
-    })
+      metadata: { video_id },
+    }),
   ];
 
   const splitter = new RecursiveCharacterTextSplitter({
@@ -46,5 +55,5 @@ export const addYTVideoToVectorStore = async (videoData) => {
   const chunks = await splitter.splitDocuments(docs);
 
   await vectorStore.addDocuments(chunks);
-  console.log("Successfully added video to vector store!");
+  console.log(`Successfully added video (${video_id}) to vector store!`);
 };
