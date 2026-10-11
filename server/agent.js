@@ -45,7 +45,7 @@ const llm = new ChatGoogleGenerativeAI({
 
 const checkpointer = new MemorySaver();
 
-const agent = createReactAgent({
+export const agent = createReactAgent({
   llm,
   tools: [retrieveTool],
   checkpointer,
@@ -58,15 +58,4 @@ const agent = createReactAgent({
 
 
 
-// testing the agent
-const video_id = "Pxn276cWKeI";
 
-const results = await agent.invoke(
-  {
-    messages: [{ role: "user", content: "What wwill people learn from ths video" }],
-  },
-  {
-    configurable: { thread_id: "1", video_id },
-  },
-);
-console.log(results.messages.at(-1)?.content);
