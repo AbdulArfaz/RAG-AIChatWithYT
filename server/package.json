@@ -11,6 +11,7 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
     "@langchain/classic": "^1.0.52",
     "@langchain/community": "^1.1.29",
     "@langchain/core": "^1.2.17",
@@ -18,6 +19,7 @@
     "@langchain/langgraph": "^1.4.21",
     "@langchain/ollama": "^1.3.0",
     "@langchain/openai": "^1.6.2",
+    "@langchain/pgvector": "^0.1.0",
     "@langchain/textsplitters": "^1.0.2",
     "dotenv": "^18.0.7",
     "langchain": "^1.5.16",
