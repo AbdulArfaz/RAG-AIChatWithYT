@@ -9,8 +9,8 @@ import { vectorStore, addYTVideoToVectorStore } from "./embeddings.js";
 import data from "./data.js";
 
 
-await addYTVideoToVectorStore(data[0]);
-await addYTVideoToVectorStore(data[1]);
+// await addYTVideoToVectorStore(data[0]);
+// await addYTVideoToVectorStore(data[1]);
 
 //retrieval tool
 const retrieveTool = tool(
@@ -18,7 +18,7 @@ const retrieveTool = tool(
     const retrievedDocs = await vectorStore.similaritySearch(
       query,
       3,
-      (doc) => doc.metadata.video_id === video_id,
+      {video_id},
     );
 
     const serializedDocs = retrievedDocs
