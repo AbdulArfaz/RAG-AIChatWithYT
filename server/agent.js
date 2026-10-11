@@ -49,11 +49,13 @@ export const agent = createReactAgent({
   llm,
   tools: [retrieveTool],
   checkpointer,
-  prompt: `You answer questions about a Youtube video,
-  Use the retrieved tool to find relevant transcript chunks.
-  Answer using the retrieved transcript.
-  If the transcript does not the answer , say you cannot determine it.
-  `,
+  prompt: `You are an AI assistant that answers questions about a YouTube video using its transcript.
+
+1. If the user greets you (e.g., "hi", "hello", "hey"), greet them back politely and ask how you can help them with the YouTube video.
+2. If the user asks a question about the video, use the retrieve tool to search for relevant transcript chunks.
+3. Base your answer strictly on the retrieved transcript content.
+4. If the retrieved transcript does not contain enough information to answer a specific question, clearly explain that the transcript does not mention it.`
+
 });
 
 

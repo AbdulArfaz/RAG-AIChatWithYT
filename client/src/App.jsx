@@ -23,14 +23,23 @@ export default function App() {
     scrollToBottom();
   }, [messages, loading]);
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!input.trim() || loading) return;
+ const handleSendMessage = async (e) => {
+  e.preventDefault();
+  if (!input.trim() || loading) return;
 
-    if (!videoId.trim()) {
-      alert('Please enter a valid YouTube Video ID first!');
-      return;
-    }
+  // 1. Check if the user typed a raw video ID or YouTube URL in the message
+  let activeVideoId = videoId.trim();
+  const urlOrIdMatch = input.trim().match(/(?:v=|\/|^)([0-9A-Za-z_-]{11})(?:[&?]|$)/);
+
+  if (urlOrIdMatch && urlOrIdMatch[1]) {
+    activeVideoId = urlOrIdMatch[1];
+    setVideoId(activeVideoId); // Automatically update top Video ID field
+  }
+
+  if (!activeVideoId) {
+    alert('Please enter a valid YouTube Video ID first!');
+    return;
+  }
 
     const userMessage = input.trim();
     setInput('');
@@ -46,7 +55,7 @@ export default function App() {
         },
         body: JSON.stringify({
           query: userMessage,
-          video_id: videoId.trim(),
+          video_id: activeVideoId,
           thread_id: threadId,
         }),
       });
