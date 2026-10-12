@@ -34,7 +34,7 @@ An intelligent, production-grade Retrieval-Augmented Generation (RAG) agent that
 * **Frontend:** React.js, Vite, Tailwind CSS(Deployed on Vercel)
 * **Backend & API:** Node.js, Express.js (v5), LangChain.js, LangGraph, `@xenova/transformers` (Deployed on Render)
 * **Database & Storage:** Neon PostgreSQL with `PGVector` extension
-* **AI & External APIs:** Google Gemini API (`gemini-1.5-flash`), RapidAPI YouTube Transcript Engine
+* **AI & External APIs:** Google Gemini API (`gemini-3.5-flash-lite`), RapidAPI YouTube Transcript Engine
 
 ---
 
