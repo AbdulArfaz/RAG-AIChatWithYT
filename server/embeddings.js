@@ -11,6 +11,7 @@ const embeddings = new HuggingFaceTransformersEmbeddings({
 
 const pgPool = new pg.Pool({
   connectionString: process.env.DB_URL,
+  ssl: { rejectUnauthorized: false }
 });
 
 pgPool.on("error", (err) => {
@@ -20,6 +21,7 @@ pgPool.on("error", (err) => {
 export const vectorStore = await PGVectorStore.initialize(embeddings, {
   postgresConnectionOptions: {
     connectionString: process.env.DB_URL,
+     ssl: { rejectUnauthorized: false },
   },
   tableName: "transcripts",
   columns: {
