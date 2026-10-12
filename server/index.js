@@ -6,12 +6,14 @@ const port = process.env.PORT || 3000;
 
 const app = express();
 
-app.use(cors({
+app.use(
+  cors({
   origin : [
-    "https://localhost:5173",
+    "http://localhost:5173",
     "https://rag-ai-chat-with-yt.vercel.app",
   ],
   credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 })
 );
 
