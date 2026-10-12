@@ -29,6 +29,7 @@ const retrieveTool = tool(
         });
 
         const data = await response.json();
+        console.log("Rapid Api Raw Response:", JSON.stringify(data))
         let fullText = "";
         if (data) {
           if (typeof data.transcript === "string") fullText = data.transcript;
