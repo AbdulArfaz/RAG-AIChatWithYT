@@ -6,16 +6,15 @@ const port = process.env.PORT || 3000;
 
 const app = express();
 
-app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
+app.use(cors({
+  origin : [
+    "https://localhost:5173",
+    "https://rag-ai-chat-with-yt.vercel.app",
+  ],
+  credentials: true,
+})
 );
 
-// Explicitly handle preflight requests for all routes
-app.options("*", cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
