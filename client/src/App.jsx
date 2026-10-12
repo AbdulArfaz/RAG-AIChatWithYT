@@ -12,7 +12,7 @@ export default function App() {
   const [input, setInput] = useState("");
   const [videoId, setVideoId] = useState("dQw4w9WgXcQ");
   const [threadId, setThreadId] = useState(
-    () => "thread_" + Math.random().toString(36).substring(2, 9),
+    () => "thread_" + Math.random().toString(36).substring(2, 9)
   );
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
@@ -57,7 +57,11 @@ export default function App() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/generate`, {
+      const BASE_URL =window.location.hostname === "localhost"
+          ? "http://localhost:3000"
+          : (import.meta.env.VITE_API_URL) || "";
+
+      const response = await fetch(`${BASE_URL}/generate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
