@@ -6,16 +6,23 @@ const port = process.env.PORT || 3000;
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://rag-ai-chat-with-yt.vercel.app" 
+];
+
 app.use(
   cors({
-  origin : [
-    "http://localhost:5173",
-    "https://rag-ai-chat-with-yt.vercel.app",
-    "http://localhost:3000"
-  ],
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-})
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1 && !origin.endsWith('.vercel.app')) {
+        return callback(new Error('Blocked by CORS'), false);
+      }
+      return callback(null, true);
+    },
+    credentials: true,
+  })
 );
 
 app.use(express.json());
