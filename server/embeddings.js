@@ -17,21 +17,27 @@ const pgPool = new pg.Pool({
 pgPool.on("error", (err) => {
   console.error("PostgreSQL Pool error (caught safely):", err.message);
 });
+export let vectorStore;
 
-export const vectorStore = await PGVectorStore.initialize(embeddings, {
-  postgresConnectionOptions: {
-    connectionString: process.env.DB_URL,
-     ssl: { rejectUnauthorized: false },
-  },
-  tableName: "transcripts",
-  columns: {
-    idColumnName: "id",
-    vectorColumnName: "vector",
-    contentColumnName: "content",
-    metadataColumnName: "metadata",
-  },
-  distanceStrategy: "cosine",
-});
+try {
+  vectorStore = await PGVectorStore.initialize(embeddings, {
+    postgresConnectionOptions: {
+      connectionString: process.env.DB_URL,
+       ssl: { rejectUnauthorized: false },
+    },
+    tableName: "transcripts",
+    columns: {
+      idColumnName: "id",
+      vectorColumnName: "vector",
+      contentColumnName: "content",
+      metadataColumnName: "metadata",
+    },
+    distanceStrategy: "cosine",
+  });
+  console.log("Vector store initialized successfully")
+} catch (err) {
+  console.log("Falied to initialized vector store:", err.message)
+}
 
 export const addYTVideoToVectorStore = async (videoData) => {
   const transcript = videoData.transcript || videoData.text;
