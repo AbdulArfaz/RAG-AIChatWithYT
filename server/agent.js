@@ -5,7 +5,6 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { MemorySaver } from "@langchain/langgraph";
 import { vectorStore, addYTVideoToVectorStore } from "./embeddings.js";
-import { YoutubeTranscript } from "youtube-transcript";
 
 const loadedVideos = new Set();
 
@@ -26,10 +25,21 @@ const retrieveTool = tool(
         `Fetching and embedding video transcript for ID: ${cleanVideoId}`,
       );
       try {
-        const transcriptItems =
-          await YoutubeTranscript.fetchTranscript(cleanVideoId);
-        if (transcriptItems && transcriptItems.length > 0) {
-          const fullText = transcriptItems.map((item) => item.text).join(" ");
+        // Fetching via RapidAPI to bypass cloud server IP blocks
+        const url = `https://youtube-transcript3.p.rapidapi.com/api/transcript?videoId=${cleanVideoId}&flat_text=true`;
+        
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            "x-rapidapi-key": process.env.RAPIDAPI_KEY,
+            "x-rapidapi-host": "youtube-transcript3.p.rapidapi.com",
+          },
+        });
+
+        const data = await response.json();
+
+        if (data && data.success && data.transcript) {
+          const fullText = data.transcript;
 
           await addYTVideoToVectorStore({
             video_id: cleanVideoId,
@@ -40,7 +50,7 @@ const retrieveTool = tool(
           return `No transcript available for video ID "${cleanVideoId}".`;
         }
       } catch (err) {
-        console.error("Error fetching live transcript:", err.message);
+        console.error("Error fetching live transcript via RapidAPI:", err.message);
         return `Unable to fetch transcript for video ID "${cleanVideoId}". It may not have closed captions enabled.`;
       }
     }
