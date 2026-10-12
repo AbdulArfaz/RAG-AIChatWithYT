@@ -12,10 +12,14 @@ const retrieveTool = tool(
   async ({ query }, { configurable: { video_id } }) => {
     if (!video_id) return "No video ID provided.";
 
-    const cleanVideoId = video_id.replace(
-      /.*(?:v=|\/)([0-9A-Za-z_-]{11}).*/,
-      "$1",
-    );
+    let cleanVideoId = video_id.trim();
+    const match = cleanVideoId.match(/(?:v=|\/|^)([0-9A-Za-z_-]{11})/);
+    if (match && match[1]) {
+      cleanVideoId = match[1];
+    }
+
+    console.log("Searching vector store for cleanVideoId:", cleanVideoId);
+    console.log("User query passed to tool:", query);
 
     if (!loadedVideos.has(cleanVideoId)) {
       try {
@@ -29,44 +33,68 @@ const retrieveTool = tool(
         });
 
         const data = await response.json();
-        console.log("Rapid Api Raw Response:", JSON.stringify(data))
+        console.log("RapidAPI Data Received for:", cleanVideoId);
+
         let fullText = "";
         if (data) {
           if (typeof data.transcript === "string") fullText = data.transcript;
-          else if (data.body) fullText = data.body;
+          else if (typeof data.body === "string") fullText = data.body;
+          else if (data.text) fullText = data.text;
           else if (Array.isArray(data)) {
             fullText = data.map((item) => item.text || item.snippet).join(" ");
           }
         }
 
-        if (fullText) {
+        console.log("Extracted fullText length:", fullText ? fullText.length : 0);
+
+        if (fullText && fullText.trim().length > 0) {
+          console.log("Starting vector store insertion...");
           await addYTVideoToVectorStore({
             video_id: cleanVideoId,
             text: fullText,
           });
           loadedVideos.add(cleanVideoId);
+          console.log("Waiting for DB commit...");
+          await new Promise((resolve) => setTimeout(resolve, 1000));
         } else {
-          return `No transcript available for video ID "${cleanVideoId}".`;
+          return `No transcript available or empty response for video ID "${cleanVideoId}".`;
         }
       } catch (err) {
+        console.error("Fetch or Ingestion error:", err.message);
         return `Unable to fetch transcript for video ID "${cleanVideoId}".`;
       }
     }
 
-    const retrievedDocs = await vectorStore.similaritySearch(query, 3, {
-      video_id: cleanVideoId,
-    });
+    let retrievedDocs = [];
+    try {
+      retrievedDocs = await vectorStore.similaritySearch(query, 5, {
+        video_id: cleanVideoId,
+      });
+    } catch (e) {
+      console.error("Filter search error:", e.message);
+    }
+
+    if (!retrievedDocs || retrievedDocs.length === 0) {
+      console.log("Filter returned 0 docs. Running manual fallback search...");
+      const allDocs = await vectorStore.similaritySearch(query, 15);
+      retrievedDocs = allDocs.filter(
+        (doc) => doc.metadata && String(doc.metadata.video_id) === String(cleanVideoId)
+      );
+    }
+
+    const contextText = retrievedDocs.map((doc) => doc.pageContent).join("\n\n");
+    console.log(`Retrieved ${retrievedDocs.length} chunks for video (${cleanVideoId})`);
 
     return (
-      retrievedDocs.map((doc) => doc.pageContent).join("\n") ||
-      "No relevant information found in the transcript."
+      contextText ||
+      `No transcript chunks found in database matching video ID "${cleanVideoId}".`
     );
   },
   {
     name: "retrieve",
     description: "Retrieve relevant text from a YouTube video transcript",
     schema: z.object({ query: z.string() }),
-  },
+  }
 );
 
 const llm = new ChatGoogleGenerativeAI({
@@ -77,7 +105,7 @@ const llm = new ChatGoogleGenerativeAI({
 
 const checkpointer = new MemorySaver();
 
-// THIS EXPORT IS REQUIRED
+
 export const agent = createReactAgent({
   llm,
   tools: [retrieveTool],
