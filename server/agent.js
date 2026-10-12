@@ -25,7 +25,6 @@ const retrieveTool = tool(
         `Fetching and embedding video transcript for ID: ${cleanVideoId}`,
       );
       try {
-        // Fetching via RapidAPI to bypass cloud server IP blocks
         const url = `https://youtube-transcript3.p.rapidapi.com/api/transcript?videoId=${cleanVideoId}&flat_text=true`;
         
         const response = await fetch(url, {
@@ -38,9 +37,16 @@ const retrieveTool = tool(
 
         const data = await response.json();
 
-        if (data && data.success && data.transcript) {
-          const fullText = data.transcript;
+        let fullText = "";
+        if (data) {
+          if (typeof data.transcript === "string") fullText = data.transcript;
+          else if (data.body) fullText = data.body;
+          else if (Array.isArray(data)) {
+            fullText = data.map((item) => item.text || item.snippet).join(" ");
+          }
+        }
 
+        if (fullText) {
           await addYTVideoToVectorStore({
             video_id: cleanVideoId,
             text: fullText,
@@ -77,23 +83,3 @@ const retrieveTool = tool(
     }),
   },
 );
-
-const llm = new ChatGoogleGenerativeAI({
-  model: "gemini-3.5-flash-lite",
-  temperature: 0,
-  apiKey: process.env.GEMINI_API_KEY,
-});
-
-const checkpointer = new MemorySaver();
-
-export const agent = createReactAgent({
-  llm,
-  tools: [retrieveTool],
-  checkpointer,
-  prompt: `You are an AI assistant that answers questions about a YouTube video using its transcript.
-
-1. If the user greets you (e.g., "hi", "hello", "hey"), greet them back politely and ask how you can help them with the YouTube video.
-2. If the user asks a question about the video, use the retrieve tool to search for relevant transcript chunks.
-3. Base your answer strictly on the retrieved transcript content.
-4. If the retrieved transcript does not contain enough information to answer a specific question, clearly explain that the transcript does not mention it.`,
-});
