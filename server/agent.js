@@ -69,7 +69,7 @@ const retrieveTool = tool(
 );
 
 const llm = new ChatGoogleGenerativeAI({
-  model: "gemini-1.5-flash",
+  model: "gemini-3.5-flash-lite",
   temperature: 0,
   apiKey: process.env.GEMINI_API_KEY,
 });
